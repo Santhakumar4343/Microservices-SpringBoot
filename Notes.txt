@@ -1,0 +1,161 @@
+
+1) Eureka Server is contains all services at one place 
+   dependency we use eureka service registry  
+   ** if we run eukrea server on port 8761 we dont need to explicitly register the services they will add automatically 
+  
+2)Admin server is responsible for get all the services health checks,logs,heapdump and other things 
+3)Zipkin server is used for the traces of our applcation and apis how much time it will take to completed the request 
+4)Services communication 
+  Resttemplete -> to call the external service with url that is not part of our application 
+  webclient -> call the external service with the url 
+  feignclient -> communication between the services in the same application using the service name without any url 
+  
+  
+📘 Spring Boot Microservices – Core Concepts & Tools
+1️⃣ Eureka Server (Service Registry)
+
+What it is:
+Eureka is a Service Registry that acts like a phone book for microservices.
+Each service registers itself with Eureka, and Eureka keeps track of all running instances.
+
+Key Points:
+
+Central place where all microservices register themselves.
+
+Removes the need to hardcode hostnames/ports in your code.
+
+Services can discover each other by service name instead of URL.
+
+Typically runs on port 8761 by default.
+
+Dependencies:
+Add in pom.xml:
+
+<dependency>
+    <groupId>org.springframework.cloud</groupId>
+    <artifactId>spring-cloud-starter-netflix-eureka-server</artifactId>
+</dependency>
+
+
+Note:
+Services must also include the Eureka client dependency to register.
+(⚠️ Services don’t register automatically unless they’re configured as Eureka clients with @EnableEurekaClient or @EnableDiscoveryClient).
+
+2️⃣ Spring Boot Admin Server
+
+What it is:
+A dashboard to monitor and manage microservices.
+
+Responsibilities:
+
+Displays health checks of services.
+
+Provides access to logs, metrics, heap dumps, and thread dumps.
+
+Useful for operational visibility.
+
+Integrates with Spring Actuator endpoints (/actuator/health, /actuator/metrics, etc.).
+
+Dependencies:
+
+<dependency>
+    <groupId>de.codecentric</groupId>
+    <artifactId>spring-boot-admin-starter-server</artifactId>
+</dependency>
+
+
+Note:
+Each service must expose Actuator endpoints and register with the Admin Server.
+
+3️⃣ Zipkin Server (Distributed Tracing)
+
+What it is:
+Zipkin is a distributed tracing system.
+It tracks requests as they move through multiple services in your system.
+
+Why we need it:
+
+Helps analyze latency problems (which service/endpoint is slow).
+
+Shows trace of API calls across microservices.
+
+Helps debug issues in complex service-to-service calls.
+
+Dependencies:
+
+<dependency>
+    <groupId>org.springframework.cloud</groupId>
+    <artifactId>spring-cloud-starter-zipkin</artifactId>
+</dependency>
+
+
+Works with: Sleuth (adds trace IDs and span IDs in logs for correlation).
+
+4️⃣ Service Communication Methods
+🔹 RestTemplate
+
+What: Old, synchronous HTTP client.
+
+When: To call an external API (not part of your microservices system).
+
+Example:
+
+RestTemplate restTemplate = new RestTemplate();
+String response = restTemplate.getForObject("https://api.example.com/data", String.class);
+
+🔹 WebClient
+
+What: Modern, non-blocking HTTP client (Reactive).
+
+When: To call external APIs (just like RestTemplate), but with better performance and async support.
+
+Example:
+
+WebClient webClient = WebClient.create();
+String response = webClient.get()
+                           .uri("https://api.example.com/data")
+                           .retrieve()
+                           .bodyToMono(String.class)
+                           .block(); // block() for sync
+
+🔹 Feign Client
+
+What: Declarative REST client provided by Spring Cloud.
+
+When: To call internal microservices by service name (via Eureka) → no need to hardcode URLs.
+
+Example:
+
+@FeignClient(name = "order-service") // service name from Eureka
+public interface OrderClient {
+    @GetMapping("/orders/{id}")
+    Order getOrderById(@PathVariable("id") String id);
+}
+
+
+Usage in Service:
+
+@Autowired
+private OrderClient orderClient;
+
+public Order fetchOrder(String id) {
+    return orderClient.getOrderById(id);
+}
+
+5️⃣ Quick Comparison – RestTemplate vs WebClient vs Feign
+Feature	RestTemplate	WebClient	Feign Client
+Type	Blocking	Non-blocking (Reactive)	Declarative
+Best for	Simple legacy APIs	High-performance, async	Service-to-service calls
+Needs URL?	Yes	Yes	No (uses service name from Eureka)
+Status	Deprecated	Recommended	Recommended with Spring Cloud
+6️⃣ Summary (Golden Rules)
+
+Use Eureka → for service discovery.
+
+Use Spring Boot Admin → for monitoring services.
+
+Use Zipkin → for distributed tracing and debugging.
+
+Use RestTemplate/WebClient → for calling external APIs.
+
+Use Feign Client → for internal microservice-to-microservice communication.
