@@ -1,0 +1,18 @@
+spring:
+  application:
+    name: GateWay
+  cloud:
+    gateway:
+      routes:
+        - id: greet-service
+          uri: lb://GREETSERVICE
+          predicates:
+            - Path=/greet
+        - id: welcome-service
+          uri: lb://WELCOMESERVICE
+          predicates:
+            - Path=/welcome
+server:
+  port: 8086
+
+

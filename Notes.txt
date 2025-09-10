@@ -159,3 +159,132 @@ Use Zipkin → for distributed tracing and debugging.
 Use RestTemplate/WebClient → for calling external APIs.
 
 Use Feign Client → for internal microservice-to-microservice communication.
+
+
+📌 Load Balancing in Spring Boot with Ribbon (Server-Side)
+🔑 Key Points
+
+Ribbon Basics
+
+Ribbon is a client-side load balancer (deprecated in newer Spring versions, replaced by Spring Cloud LoadBalancer).
+
+It automatically distributes traffic across multiple service instances registered in Eureka (service discovery).
+
+Works with RestTemplate or Feign Client.
+
+How It Works
+
+Service discovery (Eureka) provides a list of instances of a service.
+
+Ribbon maintains a local cache of available service instances.
+
+Ribbon applies a load balancing algorithm (e.g., round-robin, random, weighted response time) to pick one instance for each request.
+
+Ribbon with RestTemplate
+
+@Bean
+@LoadBalanced
+public RestTemplate restTemplate() {
+    return new RestTemplate();
+}
+
+
+→ Now when you call http://SERVICE-NAME/endpoint, Ribbon resolves it to one of the available instances.
+
+Load Balancing Strategies
+
+Default → Round Robin.
+
+Custom → can configure rules like RandomRule, BestAvailableRule, ZoneAvoidanceRule.
+
+Fault Tolerance
+
+Ribbon integrates with Hystrix for circuit breaker + fallback logic.
+
+📌 API Gateway (Spring Cloud Gateway)
+🔑 Key Points
+
+Purpose
+
+Acts as a single entry point for all client requests.
+
+Handles routing, load balancing, and cross-cutting concerns (security, logging, monitoring).
+
+Routing
+
+Defines how incoming requests should be routed to backend services.
+
+Uses predicates (conditions like Path, Header, Query param, etc.) to decide the route.
+
+Example:
+
+spring:
+  cloud:
+    gateway:
+      routes:
+        - id: order-service
+          uri: lb://ORDER-SERVICE
+          predicates:
+            - Path=/orders/**
+
+
+→ lb://ORDER-SERVICE integrates with Ribbon/Eureka for load balancing.
+
+Filters
+
+Pre Filters → execute before the request is routed (authentication, logging, request validation).
+
+Post Filters → execute after the response is received (modify response, add headers, monitoring).
+
+Example:
+
+filters:
+  - AddRequestHeader=X-Request-Source, Gateway
+  - AddResponseHeader=X-Response-Time, System
+
+
+Built-in Filters
+
+AddRequestHeader, RewritePath, Retry, CircuitBreaker, etc.
+
+Can create custom filters by implementing GatewayFilter or GlobalFilter.
+
+Load Balancing with Gateway
+
+Uses service discovery (lb://SERVICE-NAME) to automatically balance requests across service instances.
+
+Ribbon (or Spring Cloud LoadBalancer in newer versions) works behind the scenes.
+
+📌 Important Behaviors
+
+Ribbon Behavior
+
+Distributes requests among instances automatically.
+
+Can retry requests if a server is down.
+
+Keeps a cache of instances for performance.
+
+Gateway Behavior
+
+Centralized access point → hides internal services.
+
+Can enforce security policies (auth, rate limiting, IP restrictions).
+
+Applies cross-cutting filters consistently across services.
+
+Decouples client from service location & version changes.
+
+Combined Setup
+
+Eureka Server → service registry.
+
+Ribbon (in Gateway or client) → load balancing.
+
+Gateway → smart routing + pre/post processing of requests.
+
+✅ In short:
+
+Ribbon ensures traffic is spread across service instances (server-side LB).
+
+API Gateway provides routing, filtering, and a centralized entry point with load balancing baked in.
